@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Author        : kesalin@gmail.com
-# Blog          : http://kesalin.github.io
-# Date          : 2014/10/18
-# Description   : Export CSND blog articles to Markdown files. 
-# Version       : 1.0.0.0
-# Python Version: Python 2.7.3
-#
+# Original Author        : kesalin@gmail.com
+# Author                 : Python Wei
+# Python Version         : Python 2.7.x
+
 
 import urllib2
 import re
@@ -23,10 +20,10 @@ from bs4 import BeautifulSoup
 __username__ = "rav009"
 
 # set output dir
-__output__ = "/home/rav009/PythonSnippet/blogs/"
+__output__ = "/home/rav009/PythonSnippet/blogs"
 
 # set page count
-__pagecount__ = 1
+__pagecount__ = 16
 
 enableLog = True
 
@@ -39,6 +36,7 @@ enableLog = True
 gRetryCount = 5
 header = {"User-Agent": "Mozilla-Firefox5.0"}
 
+
 def log(str):
     if enableLog:
         print str
@@ -46,7 +44,8 @@ def log(str):
         newFile = open('log.txt', 'a+')
         newFile.write(str + '\n')
         newFile.close()
-        
+
+
 def decodeHtmlSpecialCharacter(htmlStr):
     specChars = {"&ensp;" : "", \
                  "&emsp;" : "", \
@@ -62,6 +61,7 @@ def decodeHtmlSpecialCharacter(htmlStr):
     for key in specChars.keys():
         htmlStr = htmlStr.replace(key, specChars[key])
     return htmlStr
+
 
 def repalceInvalidCharInFilename(filename):
     specChars = {"\\" : "", \
@@ -79,6 +79,7 @@ def repalceInvalidCharInFilename(filename):
         filename = filename.replace(key, specChars[key])
     return filename
 
+
 # process html content to markdown content
 def htmlContent2String(contentStr):
     patternImg = re.compile(r'(<img.+?src=")(.+?)(".+ />)')
@@ -91,40 +92,40 @@ def htmlContent2String(contentStr):
     resultContent = decodeHtmlSpecialCharacter(resultContent)
     return resultContent
 
+
 def exportToMarkdown(exportDir, postdate, categories, title, content):
     titleDate = postdate.strftime('%Y-%m-%d')
     contentDate = postdate.strftime('%Y-%m-%d %H:%M:%S %z')
     filename = titleDate + '-' + title
     filename = repalceInvalidCharInFilename(filename)
-    filepath = exportDir + '/' + filename + '.markdown'
+    filepath = exportDir + '/' + filename + '.html'
     print filepath
     log(" >> save as " + filename)
 
     newFile = open(unicode(filepath, "utf8"), 'w')
-    newFile.write('---' + '\n')
-    newFile.write('layout: post' + '\n')
-    newFile.write('title: \"' + title + '\"\n')
-    newFile.write('date: ' + contentDate + '\n')
-    newFile.write('comments: true' + '\n')
-    newFile.write('categories: [' + categories + ']' + '\n')
-    newFile.write('tags: [' + categories + ']' + '\n')
-    newFile.write('description: \"' + title + '\"\n')
-    newFile.write('keywords: ' + categories + '\n') 
-    newFile.write('---' + '\n\n')
+    #newFile.write('---' + '\n')
+    #newFile.write('layout: post' + '\n')
+    #newFile.write('title: \"' + title + '\"\n')
+    #newFile.write('date: ' + contentDate + '\n')
+    #newFile.write('comments: true' + '\n')
+    #newFile.write('categories: [' + categories + ']' + '\n')
+    #newFile.write('tags: [' + categories + ']' + '\n')
+    #newFile.write('description: \"' + title + '\"\n')
+    #newFile.write('keywords: ' + categories + '\n') 
+    #newFile.write('---' + '\n\n')
     newFile.write(content)
-    newFile.write('\n')
+    #newFile.write('\n')
     newFile.close()
 
-def download(url, output):
-    # 下载文章，并保存为 markdown 格式
+
+def download(url, output, title):
     log(" >> download: " + url)
 
     data = None
-    title = ""
     categories = ""
     content = ""
     postDate = datetime.datetime.now()
-    
+
     global gRetryCount
     count = 0
     while True:
@@ -132,7 +133,7 @@ def download(url, output):
             break
         count = count + 1
         try:
-            time.sleep(2.0) #访问太快会不响应
+            time.sleep(2.0) 
             request = urllib2.Request(url, None, header)
             response = urllib2.urlopen(request)
             data = response.read().decode('UTF-8')
@@ -142,37 +143,29 @@ def download(url, output):
             log(" >> failed to download " + url + ", retry: " + str(count) + ", error:" + exstr)
             pass
 
-    if data == None:
+    if not data:
         log(" >> failed to download " + url)
         return
 
-    #print data
     soup = BeautifulSoup(data, features='html5lib')
 
-    topTile = "[置顶]"
-    titleDocs = soup.find_all("div", "article_title")
-    for titleDoc in titleDocs:
-        titleStr = titleDoc.a.get_text().encode('UTF-8')
-        title = titleStr.replace(topTile, '').strip()
-        #log(" >> title: " + title)
+    categoryDoc = soup.find_all("span", attrs={"class": "article-type type-1 float-left"})
+    if len(categoryDoc) > 0:
+        categories = categoryDoc[0].get_text().encode('UTF-8').strip()
 
-    manageDocs = soup.find_all("div", "article_manage")
-    for managerDoc in manageDocs:
-        categoryDoc = managerDoc.find_all("span", "link_categories")
-        if len(categoryDoc) > 0:
-            categories = categoryDoc[0].a.get_text().encode('UTF-8').strip()
-        
-        postDateDoc = managerDoc.find_all("span", "link_postdate")
-        if len(postDateDoc) > 0:
-            postDateStr = postDateDoc[0].string.encode('UTF-8').strip()
-            postDate = datetime.datetime.strptime(postDateStr, '%Y-%m-%d %H:%M')
+    postDateDoc = soup.find_all("span", attrs={"class": "time"})
+    if len(postDateDoc) > 0:
+        postDateStr = postDateDoc[0].string.encode('UTF-8').strip()
+        postDate = datetime.datetime.strptime(postDateStr, '%Y年%m月%d日 %H:%M:%S')
 
-    contentDocs = soup.find_all(id="article_content")
-    for contentDoc in contentDocs:
-        htmlContent = contentDoc.prettify().encode('UTF-8')
-        content = htmlContent2String(htmlContent)
+    #contentDocs = soup.find_all("div", attrs={"class": "htmledit_views"})
+    #for contentDoc in contentDocs:
+    #    htmlContent = contentDoc.prettify().encode('UTF-8')
+    #    content = htmlContent2String(htmlContent)
+    content = soup.encode('UTF-8')
 
     exportToMarkdown(output, postDate, categories, title, content)
+
 
 def getPageUrlList(url):
     pageUrlList = []
@@ -180,10 +173,9 @@ def getPageUrlList(url):
         pageUrlList.append("https://blog.csdn.net/" + __username__ + "/article/list/" + str(i))
     return pageUrlList
 
+
 def getArticleList(url):
-    # 获取所有的文章的 url/title
     pageUrlList = getPageUrlList(url)
-    
     articleListDocs = []
 
     strPage = " > parsing page {0}"
@@ -198,12 +190,10 @@ def getArticleList(url):
         while retryCount <= gRetryCount:
             try:
                 retryCount = retryCount + 1
-                time.sleep(1.0) #访问太快会不响应
+                time.sleep(2.0) 
                 request = urllib2.Request(pageUrl, None, header)
                 response = urllib2.urlopen(request)
                 data = response.read().decode('UTF-8')
-                
-                #print data
                 soup = BeautifulSoup(data, features="html5lib")
 
                 articleListDocs += soup.find_all("div", attrs={"class": "article-item-box csdn-tracking-statistics"})
@@ -213,25 +203,12 @@ def getArticleList(url):
                 pass
     artices = []
     for article in articleListDocs:
-        #print article.prettify().encode('UTF-8')
         a = article.find_all("a")[0]
-        #print a.get("href")
-        #print a.get_text().encode('utf-8').replace("原", '').replace("转",'').strip()
-        #print ts
-        #for linkDoc in linkDocs:
-            #print linkDoc.prettify().encode('UTF-8')
-            #print linkDoc.a
-            #link = linkDoc.a
-            #url = link["href"].encode('UTF-8')
-            #title = link.get_text().encode('UTF-8')
-            #title = title.replace(topTile, '').strip()
-            #oneHref = "http://blog.csdn.net" + url
-            #log("   > title:" + title + ", url:" + oneHref)
-            #artices.append([oneHref, title])
-        artices.append([a.get("href"),a.get_text().encode('utf-8').replace("原", '').replace("转",'').strip()])
+        artices.append([a.get("href"), a.get_text().encode('utf-8').replace("原", '').replace("转",'').strip()])
 
     log("total articles: " + str(len(artices)) + "\n")
     return artices
+
 
 def getHtmlName(url):
     htmlNameIndex = url.rfind("/");
@@ -243,6 +220,7 @@ def getHtmlName(url):
     else:
         htmlName = url[htmlNameIndex + 1:]
     return htmlName
+
 
 def exportBlog(username, output):
     url = "https://blog.csdn.net/" + username
@@ -268,9 +246,9 @@ def exportBlog(username, output):
         strPageTemp = strPage.format(currentNum, totalNum)
         strPageTemp = strPageTemp + article[1]
         #log(strPageTemp)
+        download(article[0], output, article[1])
 
-        download(article[0], username)
 
 log("============================================================")
 exportBlog(__username__, __output__)
-#download(__testArticleUrl__, __output__)
+
