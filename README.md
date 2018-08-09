@@ -16,5 +16,7 @@ In the web page of CSDN, there is such a piece of code:
 ```
 <div style="display:none;">
 	<img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){"\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
-</div>```
+</div>
+```
+
 This piece of code will make the web page redirect to the front page of CSDN if you open the web page from local file.So I added an action  in the script to remove this piece of code.
