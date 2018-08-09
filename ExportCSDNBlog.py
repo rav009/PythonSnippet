@@ -1,4 +1,4 @@
-#! encoding=utf-8
+# -*- coding: utf-8 -*-
 
 # Author        : kesalin@gmail.com
 # Blog          : http://kesalin.github.io
@@ -20,10 +20,13 @@ from bs4 import BeautifulSoup
 
 #===========================================================================
 # set your CSDN username
-__username__ = "kesalin"
+__username__ = "rav009"
 
 # set output dir
-__output__ = "C:/Code/Python"
+__output__ = "/home/rav009/PythonSnippet/blogs/"
+
+# set page count
+__pagecount__ = 1
 
 enableLog = True
 
@@ -94,6 +97,7 @@ def exportToMarkdown(exportDir, postdate, categories, title, content):
     filename = titleDate + '-' + title
     filename = repalceInvalidCharInFilename(filename)
     filepath = exportDir + '/' + filename + '.markdown'
+    print filepath
     log(" >> save as " + filename)
 
     newFile = open(unicode(filepath, "utf8"), 'w')
@@ -143,7 +147,7 @@ def download(url, output):
         return
 
     #print data
-    soup = BeautifulSoup(data)
+    soup = BeautifulSoup(data, features='html5lib')
 
     topTile = "[置顶]"
     titleDocs = soup.find_all("div", "article_title")
@@ -171,37 +175,9 @@ def download(url, output):
     exportToMarkdown(output, postDate, categories, title, content)
 
 def getPageUrlList(url):
-    # 获取所有的页面的 url
-    request = urllib2.Request(url, None, header)
-    response = urllib2.urlopen(request)
-    data = response.read()
-    
-    #print data
-    soup = BeautifulSoup(data)
-
-    lastArticleHref = None
-    pageListDocs = soup.find_all(id="papelist")
-    for pageList in pageListDocs:
-        hrefDocs = pageList.find_all("a")
-        if len(hrefDocs) > 0:
-            lastArticleHrefDoc = hrefDocs[len(hrefDocs) - 1]
-            lastArticleHref = lastArticleHrefDoc["href"].encode('UTF-8')
-
-    if lastArticleHref == None:
-        return []
-    
-    print " > last page href:" + lastArticleHref
-    lastPageIndex = lastArticleHref.rfind("/")
-    lastPageNum = int(lastArticleHref[lastPageIndex+1:])
-    urlInfo = "http://blog.csdn.net" + lastArticleHref[0:lastPageIndex]
-
     pageUrlList = []
-    for x in xrange(1, lastPageNum + 1):
-        pageUrl = urlInfo + "/" + str(x)
-        pageUrlList.append(pageUrl)
-        log(" > page " + str(x) + ": " + pageUrl)
-
-    log("total pages: " + str(len(pageUrlList)) + "\n")
+    for i in range(1, __pagecount__ + 1):
+        pageUrlList.append("https://blog.csdn.net/" + __username__ + "/article/list/" + str(i))
     return pageUrlList
 
 def getArticleList(url):
@@ -228,29 +204,31 @@ def getArticleList(url):
                 data = response.read().decode('UTF-8')
                 
                 #print data
-                soup = BeautifulSoup(data)
-                
-                topArticleDocs = soup.find_all(id="article_toplist")
-                articleDocs = soup.find_all(id="article_list")
-                articleListDocs = articleListDocs + topArticleDocs + articleDocs
+                soup = BeautifulSoup(data, features="html5lib")
+
+                articleListDocs += soup.find_all("div", attrs={"class": "article-item-box csdn-tracking-statistics"})
                 break
             except Exception, e:
                 print "getArticleList exception:%s, url:%s, retry count:%d" % (e, pageUrl, retryCount)
                 pass
-    
     artices = []
-    topTile = "[置顶]"
-    for articleListDoc in articleListDocs:
-        linkDocs = articleListDoc.find_all("span", "link_title")
-        for linkDoc in linkDocs:
+    for article in articleListDocs:
+        #print article.prettify().encode('UTF-8')
+        a = article.find_all("a")[0]
+        #print a.get("href")
+        #print a.get_text().encode('utf-8').replace("原", '').replace("转",'').strip()
+        #print ts
+        #for linkDoc in linkDocs:
             #print linkDoc.prettify().encode('UTF-8')
-            link = linkDoc.a
-            url = link["href"].encode('UTF-8')
-            title = link.get_text().encode('UTF-8')
-            title = title.replace(topTile, '').strip()
-            oneHref = "http://blog.csdn.net" + url
+            #print linkDoc.a
+            #link = linkDoc.a
+            #url = link["href"].encode('UTF-8')
+            #title = link.get_text().encode('UTF-8')
+            #title = title.replace(topTile, '').strip()
+            #oneHref = "http://blog.csdn.net" + url
             #log("   > title:" + title + ", url:" + oneHref)
-            artices.append([oneHref, title])
+            #artices.append([oneHref, title])
+        artices.append([a.get("href"),a.get_text().encode('utf-8').replace("原", '').replace("转",'').strip()])
 
     log("total articles: " + str(len(artices)) + "\n")
     return artices
@@ -267,8 +245,8 @@ def getHtmlName(url):
     return htmlName
 
 def exportBlog(username, output):
-    url = "http://blog.csdn.net/" + username
-    outputDir = output + "/" + username
+    url = "https://blog.csdn.net/" + username
+    outputDir = output
 
     log(" >> user name: " + username)
     log(" >> output dir: " + outputDir)
@@ -278,6 +256,7 @@ def exportBlog(username, output):
     if not os.path.exists(outputDir.decode("utf-8")):
         os.makedirs(outputDir.decode("utf-8"))
 
+    log(url)
     articleList = getArticleList(url)
     totalNum = len(articleList)
 
