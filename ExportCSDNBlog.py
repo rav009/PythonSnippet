@@ -163,6 +163,7 @@ def download(url, output, title):
     #    htmlContent = contentDoc.prettify().encode('UTF-8')
     #    content = htmlContent2String(htmlContent)
     content = soup.encode('UTF-8')
+    content = content.replace('.test(window.location.hostname)){window.location.href="', '')
 
     exportToMarkdown(output, postDate, categories, title, content)
 
@@ -204,7 +205,7 @@ def getArticleList(url):
     artices = []
     for article in articleListDocs:
         a = article.find_all("a")[0]
-        artices.append([a.get("href"), a.get_text().encode('utf-8').replace("原", '').replace("转",'').strip()])
+        artices.append([a.get("href"), a.get_text().encode('utf-8').replace("原", '').replace("转",'').replace("译",'').strip()])
 
     log("total articles: " + str(len(artices)) + "\n")
     return artices
@@ -251,4 +252,3 @@ def exportBlog(username, output):
 
 log("============================================================")
 exportBlog(__username__, __output__)
-
