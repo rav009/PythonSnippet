@@ -5,6 +5,10 @@ https://github.com/kesalin/PythonSnippet/blob/master/ExportCSDNBlog.py
 
 This branch can adapt the 2018 new UI of CSDN.
 
+Preparation：
+`pip install bs4`
+`pip install html5lib`
+
 Execution:
 
 `python ExportCSDNBlog.py`
