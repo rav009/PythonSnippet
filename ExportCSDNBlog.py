@@ -19,7 +19,8 @@ from bs4 import BeautifulSoup
 # set your CSDN username
 __username__ = "rav009"
 
-# set output dir
+# set output dir 
+# e.g "C:/Temp/blogs" for windows
 __output__ = "/home/rav009/PythonSnippet/blogs"
 
 # set page count
